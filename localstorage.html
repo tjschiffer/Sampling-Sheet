@@ -1,0 +1,31 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title>Local Storage</title>
+    <script>
+
+
+        window.onload = function whatuptwochains() {
+
+            var i, value = document.getElementById('values');
+
+            values.innerHTML += "local storage, count:" + localStorage.length + '<br>';
+            for (i = 0; i < localStorage.length; i++) {
+                values.innerHTML += localStorage.key(i) + "=[" + localStorage.getItem(localStorage.key(i)) + "]" + '<br>';
+            }
+
+            //console.log("session storage");
+            //for (i = 0; i < sessionStorage.length; i++) {
+            //    console.log(sessionStorage.key(i) + "=[" + sessionStorage.getItem(sessionStorage.key(i)) + "]");
+            //}
+        }
+
+
+    </script>
+</head>
+<body>
+    <div id="values"></div>
+    <div id="log"></div>
+</body>
+</html>
