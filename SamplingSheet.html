@@ -1,1 +1,740 @@
-<!DOCTYPE html><html><head id="Head1">	<title>Sampling Sheet</title>	<link rel="shortcut icon" type="image/png" href="http://i.imgur.com/r0Mfg3p.png" />	<script src="assets/js/browser-check.js" type="text/javascript"></script>	<script src="assets/js/jquery.min.js" type="text/javascript"></script>	<script src="assets/js/fixed-header.js" type="text/javascript"></script>	<script src="assets/js/qrcode.min.js" type="text/javascript"></script>	<script type="text/javascript">    //<![CDATA[ 	    $(window).load(function () {	        /*  cellPos jQuery plugin	        ---------------------	        Get visual position of cell in HTML table (or its block like thead).	        Return value is object with "top" and "left" properties set to row and column index of top-left cell corner.	        Example of use:	            $("#myTable tbody td").each(function(){ 	                $(this).text( $(this).cellPos().top +", "+ $(this).cellPos().left );	            });	        */	        (function ($) {	            /* scan individual table and set "cellPos" data in the form { left: x-coord, top: y-coord } */	            function scanTable($table) {	                var m = [];	                $table.children("tr").each(function (y, row) {	                    $(row).children("td, th").each(function (x, cell) {	                        var $cell = $(cell),	                            cspan = $cell.attr("colspan") | 0,	                            rspan = $cell.attr("rowspan") | 0,	                            tx, ty;	                        cspan = cspan ? cspan : 1;	                        rspan = rspan ? rspan : 1;	                        for (; m[y] && m[y][x]; ++x);  //skip already occupied cells in current row	                        for (tx = x; tx < x + cspan; ++tx) {  //mark matrix elements occupied by current cell with true	                            for (ty = y; ty < y + rspan; ++ty) {	                                if (!m[ty]) {  //fill missing rows	                                    m[ty] = [];	                                }	                                m[ty][tx] = true;	                            }	                        }	                        var pos = { top: y, left: x };	                        $cell.data("cellPos", pos);	                    });	                });	            };	            /* plugin */	            $.fn.cellPos = function (rescan) {	                var $cell = this.first(),	                    pos = $cell.data("cellPos");	                if (!pos || rescan) {	                    var $table = $cell.closest("table, thead, tbody, tfoot");	                    scanTable($table);	                }	                pos = $cell.data("cellPos");	                return pos;	            }	        })(jQuery);	        //$(document).ready(function () {	        //    $("table tbody td").each(function () {	        //        $(this).text($(this).cellPos().top + "," + $(this).cellPos().left);	        //    });	        //});	        $('input').keypress(function (e) {	            if (e.which == 13) {	                e.preventDefault();	                var $this = $(this),	                    cellPosLeft = $this.closest('td').cellPos().left;	                var cells = $this.closest('tr').next().find('td')	                for (var i = 0; i < cells.length; i++) {	                    //console.log($(cells[i]).cellPos().left)	                    if ($(cells[i]).cellPos().left === cellPosLeft) {	                        $(cells[i]).find('input').focus();	                    }	                }	            }	        });	        var input = document.getElementsByTagName('input');	        //retrieve 	        for (var i = 0; i < input.length; i++) {	            if (input[i].type == 'number') {	                var lsVal = localStorage.getItem(input[i].name);	                if (Number(input[i].placeholder) !== Number(lsVal)) { input[i].value = lsVal; }	                else { localStorage.removeItem(input[i].name) }	            }	            else {	                if (input[i].type == 'checkbox' && input[i].checked === false) {	                    if (localStorage.getItem(input[i].name) === 'Yes') { input[i].checked = true }	                } else { localStorage.removeItem(input[i].name) };	            }	        }	        var focus1 = document.getElementById(localStorage.getItem('focus'));	        if (focus1 != null) {	            focus1.focus();	            fixedheaders();	        }	        var scroll1 = document.getElementById(localStorage.getItem('scroll'));	        if (scroll1 != null) {	            $(window).scrollTop(scroll1)	        }	        function storeInputs() {	            for (var i = 0; i < input.length; i++) {	                if (input[i].value !== '') {	                    if (input[i].type === 'number') {	                        localStorage.setItem(input[i].name, input[i].value);	                    } else {	                        var pHcheck = document.getElementsByName(input[i].name);	                        if (pHcheck.length === 1) {	                            if (input[i].checked === true) {	                                localStorage.setItem(input[i].name, input[i].value);	                            } else {	                                localStorage.removeItem(input[i].name);	                            }	                        } else {	                            if (input[i].type === 'hidden') {	                                if (pHcheck[1].type === 'checkbox' && pHcheck[1].checked === false) {	                                    localStorage.setItem(input[i].name, input[i].value);	                                } else {	                                    localStorage.removeItem(input[i].name);	                                }	                            }	                        }	                    }	                } else {	                    localStorage.removeItem(input[i].name);	                }	            }	        }	        jQuery('span.little-arrow').click(function () {	            var $this = $(this),	            index_col = $this.closest('td').index(),	            index_row = $this.closest('tr').index(),	            val = $(this).next('input').val();	            for (var i = 0; i < input.length; i++) {	                if (input[i].type == 'number' && $(input[i]).closest('td').index() == index_col &&	                    $(input[i]).closest('tr').index() > index_row && !input[i].value) {	                    input[i].value = val;	                }	            }	            storeInputs();	        });	        jQuery('span.gluc-arrow').click(function () {	            var td = document.getElementsByTagName('td'),	            $this = $(this),	            index_col = $this.closest('th').index();	            for (var i = 0; i < td.length; i++) {	                if ($(td[i]).index() == index_col && $(td[i]).text().indexOf('+') > -1) {	                    var index_row = $(td[i]).closest('tr').index(),	                    gluc_input = $(td[i]).closest('td'),	                    gluc_text = $(td[i]).text();	                    var gluc_value = gluc_text.substring(gluc_text.indexOf('+') + 1);	                    if (gluc_value > 0) {	                        do {	                            gluc_input = gluc_input.closest('td').next().find('input');	                        } while (gluc_input.closest('tr').index() == index_row && gluc_input.attr('id').indexOf('Nutrient') == -1);	                        if (!gluc_input.val()) { gluc_input.val(gluc_value); }	                    }	                }	            }	            storeInputs();	        });	        //store	        $('input').on('input propertychange paste change', function () {	            storeInputs();	        });	        $('*').focusout(function () {	            localStorage.removeItem('focus')	        });	        $('*').focus(function () {	            localStorage.setItem('focus', $(this).attr("id"))	        });	        $(window).scroll(function () {	            localStorage.setItem('scroll', $(window).scrollTop());	        });	        /* Call fixedheaders when the Barcode cell is focused or not focused, needed for Firefox */	        $(".BarcodeCell").focus(function () {	            fixedheaders();	        }).blur(function () {	            fixedheaders();	        });	        // disable mousewheel on a input number field when in focus	        // (to prevent Cromium browsers change the value when scrolling)	        $('form').on('focus', 'input[type=number]', function (e) {	            $(this).on('mousewheel.disableScroll', function (e) {	                e.preventDefault()	            })	        })	        $('form').on('blur', 'input[type=number]', function (e) {	            $(this).off('mousewheel.disableScroll')	        })	    });	    //]]>	    function clearforms(check) {	        if (check == true) { var r = confirm("Are you sure you want to clear all fields?\n\nThis cannot be undone."); }	        else { var r = true; }	        if (r == true) {	            var input = document.getElementsByTagName('input');	            for (var i = 0; i < input.length; i++) {	                if (input[i].type == 'number') { input[i].value = null; };	                if (input[i].type == 'checkbox') {	                    if (input[i].hasAttribute("checked"))	                    { input[i].checked = true; }	                    else	                    { input[i].checked = false; }	                };	            }	            localStorage.clear();	            window.location.href = document.URL;	        }	    }	    $(document).ready(function () {	        var qrs = document.getElementsByClassName('HiddenBarcodeCell');	        for (i = 0; i < qrs.length; i++) {	            var color = '#000000';	            if (qrs[i].hasAttribute('data-color')) { color = qrs[i].attributes['data-color'].value;};	            new QRCode(qrs[i], {	                text: qrs[i].attributes['title'].value,	                width: 150,	                height: 150,	                colorDark: color,	                colorLight: '#ffffff',	                correctLevel: QRCode.CorrectLevel.L	            });	        };	        	        fixedheaders();	    });	    window.setTimeout(function () { window.location.reload() }, 900000);	</script>	<link href="assets/css/main.css" type="text/css" rel="stylesheet" />	<link href="assets/css/SamplingSheet.css" type="text/css" rel="stylesheet" /></head><body>    <a href="https://regeneron.mindtouch.us/Research_and_Development/Department_Pages/PMPD/Data_Management/LIMS/LIMS_User_Guide/LIMS_Sampling_Sheets" target="_blank" style="z-index:1;position:fixed;font-size:0.85vw;right:0.1vw;top:-0.1vw">Help</a>    <form action="localstorage.html" id="Form1">        <table id="Table1" class="myTable">			<tr id="headerrow" class="border_bottom" style="font-weight:bold;">				<th>Run</th><th>Batch ID</th><th>Current<br/>Day</th><th>Lot</th><th>Check?</th><th>Time</th><th>Day</th><th>Val</th><th>Nutrient</th><th>Input1</th><th>Input2</th><th>Count</th><th>Input3</th><th>Sample Barcode</th>			</tr>			<tr style="background-color:#90F8CA;">				<td class="border_bottom" rowspan="5">Run1</td>				<td class="border_bottom" rowspan="5">RunID1</td>				<td class="border_bottom" rowspan="5">5</td>				<td>Lot1</td>				<td>					<input id="Run1_Lot1+Check (y/n)-hidden" type="hidden" name="Run1_Lot1+Check (y/n)" value="0" tabindex="-1"></input>					<input name="Run1_Lot1+Check" type="checkbox" id="Run1_Lot1+Check" checked="checked" class="phcheckbox" value="1" tabindex="-1" />					<label id="Run1_Lot1+Check-label" for="Run1_Lot1+Check" class="phcheckbox" style="color:#787878;"></label>				</td>				<td>10/1/2015&nbsp;6:05:33&nbsp;PM</td>				<td>0</td>				<td>7.00</td>				<td>1.00</td>				<td>					<input name="Run1_Lot1+Input1" type="number" id="Run1_Lot1+Input1" min="0" step="0.5" />				</td>				<td>					<input name="Run1_Lot1+Input2" type="number" id="Run1_Lot1+Input2" min="0" step="0.5" />				</td>				<td>1.00@100%</td>				<td>					<input name="Run1_Lot1+Input3" type="number" id="Run1_Lot1+Input3" min="0" step="0.01" placeholder="0.24" />				</td>				<td id="Run1_Lot1+barcode" class="BarcodeCell" tabindex="-1" >					<div class="Barcode">BarcodeLine1<br/>Day0</div>						<table class="BarcodeTable">							<tr>								<td>BarcodeLine1<br/>BarcodeLine2<br/>BarcodeLine3</td><td class="HiddenBarcodeCell" title="BarcodeLine1	BarcodeLine2	BarcodeLine3" data-color="#000000"></td>							</tr>						</table>				</td>			</tr>			<tr style="background-color:#A4FFDE;">				<td>Lot2</td>				<td>					<input id="Run1_Lot2+Check (y/n)-hidden" type="hidden" name="Run1_Lot2+Check (y/n)" value="0" tabindex="-1"></input>					<input name="Run1_Lot2+Check" type="checkbox" id="Run1_Lot2+Check" checked="checked" class="phcheckbox" value="1" tabindex="-1" />					<label id="Run1_Lot2+Check-label" for="Run1_Lot2+Check" class="phcheckbox" style="color:#787878;"></label>				</td>				<td>10/2/2015&nbsp;6:05:33&nbsp;PM</td>				<td>1</td>				<td>8.00</td>				<td>6.50</td>				<td>					<input name="Run1_Lot2+Input1" type="number" id="Run1_Lot2+Input1" min="0" step="0.5" placeholder="5" />				</td>				<td>					<input name="Run1_Lot2+Input2" type="number" id="Run1_Lot2+Input2" min="0" step="0.5" />				</td>				<td>5.50@45%</td>				<td>					<input name="Run1_Lot2+Input3" type="number" id="Run1_Lot2+Input3" min="0" step="0.01" placeholder="0.5" />				</td>				<td id="Run1_Lot2+barcode" class="BarcodeCell" tabindex="-1" >					<div class="Barcode">BarcodeLine1<br/>Day1</div>						<table class="BarcodeTable">							<tr>								<td>BarcodeLine1<br/>BarcodeLine2<br/>BarcodeLine3</td><td class="HiddenBarcodeCell" title="BarcodeLine1	BarcodeLine2	BarcodeLine3" data-color="#000000"></td>							</tr>						</table>					</td>				</td>			</tr>			<tr style="background-color:#90F8CA;">				<td>Lot3</td>				<td>					<input name="Run1_Lot3+Check" type="checkbox" id="Run1_Lot3+Check" class="phcheckbox" value="1" tabindex="-1" />					<label id="Run1_Lot3+Check-label" for="Run1_Lot3+Check" class="phcheckbox" style="color:#787878;"></label>				</td>				<td>10/3/2015&nbsp;6:05:33&nbsp;PM</td>				<td>2</td>				<td>6.00</td>				<td>6.50</td>				<td>					<input name="Run1_Lot3+Input1" type="number" id="Run1_Lot3+Input1" min="0" step="0.5" placeholder="6" />				</td>				<td>					<input name="Run1_Lot3+Input2" type="number" id="Run1_Lot3+Input2" min="0" step="0.5" />				</td>				<td>8.6@37%</td>				<td>					<input name="Run1_Lot3+Input3" type="number" id="Run1_Lot3+Input3" min="0" step="0.01" placeholder="0.7" />				</td>				<td id="Run1_Lot3+barcode" class="BarcodeCell" tabindex="-1" >					<div class="Barcode">BarcodeLine1<br/>Day2</div>						<table class="BarcodeTable">							<tr>								<td>BarcodeLine1<br/>BarcodeLine2<br/>BarcodeLine3</td><td class="HiddenBarcodeCell" title="BarcodeLine1	BarcodeLine2	BarcodeLine3" data-color="#000000"></td>							</tr>						</table>					</td>				</td>			</tr>			<tr style="background-color:#A4FFDE;">				<td>Lot4</td>				<td>					<input id="Run1_Lot4+Check (y/n)-hidden" type="hidden" name="Run1_Lot4+Check (y/n)" value="0" tabindex="-1"></input>					<input name="Run1_Lot4+Check" type="checkbox" id="Run1_Lot4+Check" checked="checked" class="phcheckbox" value="1" tabindex="-1" />					<label id="Run1_Lot4+Check-label" for="Run1_Lot4+Check" class="phcheckbox" style="color:#787878;"></label>				</td>				<td>10/4/2015&nbsp;5:05:33&nbsp;PM</td>				<td>4</td>				<td>3.50</td>				<td>7.5</td>				<td>					<input name="Run1_Lot4+Input1" type="number" id="Run1_Lot4+Input1" min="0" step="0.5" placeholder="5" />				</td>				<td>					<input name="Run1_Lot4+Input2" type="number" id="Run1_Lot4+Input2" min="0" step="0.5" />				</td>				<td>5.6@15%</td>				<td>					<input name="Run1_Lot4+Input3" type="number" id="Run1_Lot4+Input3" min="0" step="0.01" placeholder="0.5" />				</td>				<td id="Run1_Lot4+barcode" class="BarcodeCell" tabindex="-1" >					<div class="Barcode">BarcodeLine1<br/>Day3</div>						<table class="BarcodeTable">							<tr>								<td>BarcodeLine1<br/>BarcodeLine2<br/>BarcodeLine3</td><td class="HiddenBarcodeCell" title="BarcodeLine1	BarcodeLine2	BarcodeLine3" data-color="#000000"></td>							</tr>						</table>					</td>				</td>			</tr>			<tr class="border_bottom" style="background-color:#90F8CA;">				<td>Lot5</td>				<td>					<input name="Run1_Lot5+Check" type="checkbox" id="Run1_Lot5+Check" class="phcheckbox" value="1" tabindex="-1" />					<label id="Run1_Lot5+Check-label" for="Run1_Lot5+Check" class="phcheckbox" style="color:#787878;"></label>				</td>				<td>10/5/2015&nbsp;7:18:33&nbsp;PM</td>				<td>5</td>				<td>4.00</td>				<td>1.50</td>				<td>					<input name="Run1_Lot5+Input1" type="number" id="Run1_Lot5+Input1" min="0" step="0.5" placeholder="6" />				</td>				<td>					<input name="Run1_Lot5+Input2" type="number" id="Run1_Lot5+Input2" min="0" step="0.5" />				</td>				<td>1.5@83%</td>				<td>					<input name="Run1_Lot5+Input3" type="number" id="Run1_Lot5+Input3" min="0" step="0.01" placeholder="0.7" />				</td>				<td id="Run1_Lot5+barcode" class="BarcodeCell" tabindex="-1" >					<div class="Barcode">BarcodeLine1<br/>Day4</div>						<table class="BarcodeTable">							<tr>								<td>BarcodeLine1<br/>BarcodeLine2<br/>BarcodeLine3</td><td class="HiddenBarcodeCell" title="BarcodeLine1	BarcodeLine2	BarcodeLine3" data-color="#000000"></td>							</tr>						</table>					</td>				</td>			</tr>			<tr style="background-color:#90F8CA;">				<td class="border_bottom" rowspan="5">Run2</td>				<td class="border_bottom" rowspan="5">RunID2</td>				<td class="border_bottom" rowspan="5">5</td>				<td>Lot1</td>				<td>					<input id="Run2_Lot1+Check (y/n)-hidden" type="hidden" name="Run2_Lot1+Check (y/n)" value="0" tabindex="-1"></input>					<input name="Run2_Lot1+Check" type="checkbox" id="Run2_Lot1+Check" checked="checked" class="phcheckbox" value="1" tabindex="-1" />					<label id="Run2_Lot1+Check-label" for="Run2_Lot1+Check" class="phcheckbox" style="color:#787878;"></label>				</td>				<td>10/1/2015&nbsp;6:05:33&nbsp;PM</td>				<td>0</td>				<td>7.00</td>				<td>1.00</td>				<td>					<input name="Run2_Lot1+Input1" type="number" id="Run2_Lot1+Input1" min="0" step="0.5" />				</td>				<td>					<input name="Run2_Lot1+Input2" type="number" id="Run2_Lot1+Input2" min="0" step="0.5" />				</td>				<td>1.00@100%</td>				<td>					<input name="Run2_Lot1+Input3" type="number" id="Run2_Lot1+Input3" min="0" step="0.01" placeholder="0.24" />				</td>				<td id="Run2_Lot1+barcode" class="BarcodeCell" tabindex="-1" >					<div class="Barcode">BarcodeLine1<br/>Day0</div>						<table class="BarcodeTable">							<tr>								<td>BarcodeLine1<br/>BarcodeLine2<br/>BarcodeLine3</td><td class="HiddenBarcodeCell" title="BarcodeLine1	BarcodeLine2	BarcodeLine3" data-color="#000000"></td>							</tr>						</table>				</td>			</tr>			<tr style="background-color:#A4FFDE;">				<td>Lot2</td>				<td>					<input id="Run2_Lot2+Check (y/n)-hidden" type="hidden" name="Run2_Lot2+Check (y/n)" value="0" tabindex="-1"></input>					<input name="Run2_Lot2+Check" type="checkbox" id="Run2_Lot2+Check" checked="checked" class="phcheckbox" value="1" tabindex="-1" />					<label id="Run2_Lot2+Check-label" for="Run2_Lot2+Check" class="phcheckbox" style="color:#787878;"></label>				</td>				<td>10/2/2015&nbsp;6:05:33&nbsp;PM</td>				<td>1</td>				<td>8.00</td>				<td>6.50</td>				<td>					<input name="Run2_Lot2+Input1" type="number" id="Run2_Lot2+Input1" min="0" step="0.5" placeholder="5" />				</td>				<td>					<input name="Run2_Lot2+Input2" type="number" id="Run2_Lot2+Input2" min="0" step="0.5" />				</td>				<td>5.50@45%</td>				<td>					<input name="Run2_Lot2+Input3" type="number" id="Run2_Lot2+Input3" min="0" step="0.01" placeholder="0.5" />				</td>				<td id="Run2_Lot2+barcode" class="BarcodeCell" tabindex="-1" >					<div class="Barcode">BarcodeLine1<br/>Day1</div>						<table class="BarcodeTable">							<tr>								<td>BarcodeLine1<br/>BarcodeLine2<br/>BarcodeLine3</td><td class="HiddenBarcodeCell" title="BarcodeLine1	BarcodeLine2	BarcodeLine3" data-color="#000000"></td>							</tr>						</table>					</td>				</td>			</tr>			<tr style="background-color:#90F8CA;">				<td>Lot3</td>				<td>					<input name="Run2_Lot3+Check" type="checkbox" id="Run2_Lot3+Check" class="phcheckbox" value="1" tabindex="-1" />					<label id="Run2_Lot3+Check-label" for="Run2_Lot3+Check" class="phcheckbox" style="color:#787878;"></label>				</td>				<td>10/3/2015&nbsp;6:05:33&nbsp;PM</td>				<td>2</td>				<td>6.00</td>				<td>6.50</td>				<td>					<input name="Run2_Lot3+Input1" type="number" id="Run2_Lot3+Input1" min="0" step="0.5" placeholder="6" />				</td>				<td>					<input name="Run2_Lot3+Input2" type="number" id="Run2_Lot3+Input2" min="0" step="0.5" />				</td>				<td>8.6@37%</td>				<td>					<input name="Run2_Lot3+Input3" type="number" id="Run2_Lot3+Input3" min="0" step="0.01" placeholder="0.7" />				</td>				<td id="Run2_Lot3+barcode" class="BarcodeCell" tabindex="-1" >					<div class="Barcode">BarcodeLine1<br/>Day2</div>						<table class="BarcodeTable">							<tr>								<td>BarcodeLine1<br/>BarcodeLine2<br/>BarcodeLine3</td><td class="HiddenBarcodeCell" title="BarcodeLine1	BarcodeLine2	BarcodeLine3" data-color="#000000"></td>							</tr>						</table>					</td>				</td>			</tr>			<tr style="background-color:#A4FFDE;">				<td>Lot4</td>				<td>					<input id="Run2_Lot4+Check (y/n)-hidden" type="hidden" name="Run2_Lot4+Check (y/n)" value="0" tabindex="-1"></input>					<input name="Run2_Lot4+Check" type="checkbox" id="Run2_Lot4+Check" checked="checked" class="phcheckbox" value="1" tabindex="-1" />					<label id="Run2_Lot4+Check-label" for="Run2_Lot4+Check" class="phcheckbox" style="color:#787878;"></label>				</td>				<td>10/4/2015&nbsp;5:05:33&nbsp;PM</td>				<td>4</td>				<td>3.50</td>				<td>7.5</td>				<td>					<input name="Run2_Lot4+Input1" type="number" id="Run2_Lot4+Input1" min="0" step="0.5" placeholder="5" />				</td>				<td>					<input name="Run2_Lot4+Input2" type="number" id="Run2_Lot4+Input2" min="0" step="0.5" />				</td>				<td>5.6@15%</td>				<td>					<input name="Run2_Lot4+Input3" type="number" id="Run2_Lot4+Input3" min="0" step="0.01" placeholder="0.5" />				</td>				<td id="Run2_Lot4+barcode" class="BarcodeCell" tabindex="-1" >					<div class="Barcode">BarcodeLine1<br/>Day3</div>						<table class="BarcodeTable">							<tr>								<td>BarcodeLine1<br/>BarcodeLine2<br/>BarcodeLine3</td><td class="HiddenBarcodeCell" title="BarcodeLine1	BarcodeLine2	BarcodeLine3" data-color="#000000"></td>							</tr>						</table>					</td>				</td>			</tr>			<tr class="border_bottom" style="background-color:#90F8CA;">				<td>Lot5</td>				<td>					<input name="Run2_Lot5+Check" type="checkbox" id="Run2_Lot5+Check" class="phcheckbox" value="1" tabindex="-1" />					<label id="Run2_Lot5+Check-label" for="Run2_Lot5+Check" class="phcheckbox" style="color:#787878;"></label>				</td>				<td>10/5/2015&nbsp;7:18:33&nbsp;PM</td>				<td>5</td>				<td>4.00</td>				<td>1.50</td>				<td>					<input name="Run2_Lot5+Input1" type="number" id="Run2_Lot5+Input1" min="0" step="0.5" placeholder="6" />				</td>				<td>					<input name="Run2_Lot5+Input2" type="number" id="Run2_Lot5+Input2" min="0" step="0.5" />				</td>				<td>1.5@83%</td>				<td>					<input name="Run2_Lot5+Input3" type="number" id="Run2_Lot5+Input3" min="0" step="0.01" placeholder="0.7" />				</td>				<td id="Run2_Lot5+barcode" class="BarcodeCell" tabindex="-1" >					<div class="Barcode">BarcodeLine1<br/>Day4</div>						<table class="BarcodeTable">							<tr>								<td>BarcodeLine1<br/>BarcodeLine2<br/>BarcodeLine3</td><td class="HiddenBarcodeCell" title="BarcodeLine1	BarcodeLine2	BarcodeLine3" data-color="#000000"></td>							</tr>						</table>					</td>				</td>			</tr>			<tr style="background-color:#90F8CA;">				<td class="border_bottom" rowspan="5">Run3</td>				<td class="border_bottom" rowspan="5">RunID3</td>				<td class="border_bottom" rowspan="5">5</td>				<td>Lot1</td>				<td>					<input id="Run3_Lot1+Check (y/n)-hidden" type="hidden" name="Run3_Lot1+Check (y/n)" value="0" tabindex="-1"></input>					<input name="Run3_Lot1+Check" type="checkbox" id="Run3_Lot1+Check" checked="checked" class="phcheckbox" value="1" tabindex="-1" />					<label id="Run3_Lot1+Check-label" for="Run3_Lot1+Check" class="phcheckbox" style="color:#787878;"></label>				</td>				<td>10/1/2015&nbsp;6:05:33&nbsp;PM</td>				<td>0</td>				<td>7.00</td>				<td>1.00</td>				<td>					<input name="Run3_Lot1+Input1" type="number" id="Run3_Lot1+Input1" min="0" step="0.5" />				</td>				<td>					<input name="Run3_Lot1+Input2" type="number" id="Run3_Lot1+Input2" min="0" step="0.5" />				</td>				<td>1.00@100%</td>				<td>					<input name="Run3_Lot1+Input3" type="number" id="Run3_Lot1+Input3" min="0" step="0.01" placeholder="0.24" />				</td>				<td id="Run3_Lot1+barcode" class="BarcodeCell" tabindex="-1" >					<div class="Barcode">BarcodeLine1<br/>Day0</div>						<table class="BarcodeTable">							<tr>								<td>BarcodeLine1<br/>BarcodeLine2<br/>BarcodeLine3</td><td class="HiddenBarcodeCell" title="BarcodeLine1	BarcodeLine2	BarcodeLine3" data-color="#000000"></td>							</tr>						</table>				</td>			</tr>			<tr style="background-color:#A4FFDE;">				<td>Lot2</td>				<td>					<input id="Run3_Lot2+Check (y/n)-hidden" type="hidden" name="Run3_Lot2+Check (y/n)" value="0" tabindex="-1"></input>					<input name="Run3_Lot2+Check" type="checkbox" id="Run3_Lot2+Check" checked="checked" class="phcheckbox" value="1" tabindex="-1" />					<label id="Run3_Lot2+Check-label" for="Run3_Lot2+Check" class="phcheckbox" style="color:#787878;"></label>				</td>				<td>10/2/2015&nbsp;6:05:33&nbsp;PM</td>				<td>1</td>				<td>8.00</td>				<td>6.50</td>				<td>					<input name="Run3_Lot2+Input1" type="number" id="Run3_Lot2+Input1" min="0" step="0.5" placeholder="5" />				</td>				<td>					<input name="Run3_Lot2+Input2" type="number" id="Run3_Lot2+Input2" min="0" step="0.5" />				</td>				<td>5.50@45%</td>				<td>					<input name="Run3_Lot2+Input3" type="number" id="Run3_Lot2+Input3" min="0" step="0.01" placeholder="0.5" />				</td>				<td id="Run3_Lot2+barcode" class="BarcodeCell" tabindex="-1" >					<div class="Barcode">BarcodeLine1<br/>Day1</div>						<table class="BarcodeTable">							<tr>								<td>BarcodeLine1<br/>BarcodeLine2<br/>BarcodeLine3</td><td class="HiddenBarcodeCell" title="BarcodeLine1	BarcodeLine2	BarcodeLine3" data-color="#000000"></td>							</tr>						</table>					</td>				</td>			</tr>			<tr style="background-color:#90F8CA;">				<td>Lot3</td>				<td>					<input name="Run3_Lot3+Check" type="checkbox" id="Run3_Lot3+Check" class="phcheckbox" value="1" tabindex="-1" />					<label id="Run3_Lot3+Check-label" for="Run3_Lot3+Check" class="phcheckbox" style="color:#787878;"></label>				</td>				<td>10/3/2015&nbsp;6:05:33&nbsp;PM</td>				<td>2</td>				<td>6.00</td>				<td>6.50</td>				<td>					<input name="Run3_Lot3+Input1" type="number" id="Run3_Lot3+Input1" min="0" step="0.5" placeholder="6" />				</td>				<td>					<input name="Run3_Lot3+Input2" type="number" id="Run3_Lot3+Input2" min="0" step="0.5" />				</td>				<td>8.6@37%</td>				<td>					<input name="Run3_Lot3+Input3" type="number" id="Run3_Lot3+Input3" min="0" step="0.01" placeholder="0.7" />				</td>				<td id="Run3_Lot3+barcode" class="BarcodeCell" tabindex="-1" >					<div class="Barcode">BarcodeLine1<br/>Day2</div>						<table class="BarcodeTable">							<tr>								<td>BarcodeLine1<br/>BarcodeLine2<br/>BarcodeLine3</td><td class="HiddenBarcodeCell" title="BarcodeLine1	BarcodeLine2	BarcodeLine3" data-color="#000000"></td>							</tr>						</table>					</td>				</td>			</tr>			<tr style="background-color:#A4FFDE;">				<td>Lot4</td>				<td>					<input id="Run3_Lot4+Check (y/n)-hidden" type="hidden" name="Run3_Lot4+Check (y/n)" value="0" tabindex="-1"></input>					<input name="Run3_Lot4+Check" type="checkbox" id="Run3_Lot4+Check" checked="checked" class="phcheckbox" value="1" tabindex="-1" />					<label id="Run3_Lot4+Check-label" for="Run3_Lot4+Check" class="phcheckbox" style="color:#787878;"></label>				</td>				<td>10/4/2015&nbsp;5:05:33&nbsp;PM</td>				<td>4</td>				<td>3.50</td>				<td>7.5</td>				<td>					<input name="Run3_Lot4+Input1" type="number" id="Run3_Lot4+Input1" min="0" step="0.5" placeholder="5" />				</td>				<td>					<input name="Run3_Lot4+Input2" type="number" id="Run3_Lot4+Input2" min="0" step="0.5" />				</td>				<td>5.6@15%</td>				<td>					<input name="Run3_Lot4+Input3" type="number" id="Run3_Lot4+Input3" min="0" step="0.01" placeholder="0.5" />				</td>				<td id="Run3_Lot4+barcode" class="BarcodeCell" tabindex="-1" >					<div class="Barcode">BarcodeLine1<br/>Day3</div>						<table class="BarcodeTable">							<tr>								<td>BarcodeLine1<br/>BarcodeLine2<br/>BarcodeLine3</td><td class="HiddenBarcodeCell" title="BarcodeLine1	BarcodeLine2	BarcodeLine3" data-color="#000000"></td>							</tr>						</table>					</td>				</td>			</tr>			<tr class="border_bottom" style="background-color:#90F8CA;">				<td>Lot5</td>				<td>					<input name="Run3_Lot5+Check" type="checkbox" id="Run3_Lot5+Check" class="phcheckbox" value="1" tabindex="-1" />					<label id="Run3_Lot5+Check-label" for="Run3_Lot5+Check" class="phcheckbox" style="color:#787878;"></label>				</td>				<td>10/5/2015&nbsp;7:18:33&nbsp;PM</td>				<td>5</td>				<td>4.00</td>				<td>1.50</td>				<td>					<input name="Run3_Lot5+Input1" type="number" id="Run3_Lot5+Input1" min="0" step="0.5" placeholder="6" />				</td>				<td>					<input name="Run3_Lot5+Input2" type="number" id="Run3_Lot5+Input2" min="0" step="0.5" />				</td>				<td>1.5@83%</td>				<td>					<input name="Run3_Lot5+Input3" type="number" id="Run3_Lot5+Input3" min="0" step="0.01" placeholder="0.7" />				</td>				<td id="Run3_Lot5+barcode" class="BarcodeCell" tabindex="-1" >					<div class="Barcode">BarcodeLine1<br/>Day4</div>						<table class="BarcodeTable">							<tr>								<td>BarcodeLine1<br/>BarcodeLine2<br/>BarcodeLine3</td><td class="HiddenBarcodeCell" title="BarcodeLine1	BarcodeLine2	BarcodeLine3" data-color="#000000"></td>							</tr>						</table>					</td>				</td>			</tr>		</table>        <div>               <input type="submit" value="Send Data" style="float: right; margin: 2.5vh; font-weight: bold; font-family: Calibri; font-size: 1.1vw; width: 10vw; height: 2.5vw; outline: none;" />        </div>        </form><button onclick="clearforms(true)" style="float: left; margin: 2.5vh; font-weight: bold; font-family: Calibri; font-size: 1.1vw; width: 10vw; height: 2.5vw;">Clear Forms</button>      </body></html>
+
+
+<!DOCTYPE html>
+
+<html>
+<head id="Head1">
+	<title>Sampling Sheet</title>
+	<link rel="shortcut icon" type="image/png" href="http://i.imgur.com/r0Mfg3p.png" />
+	<script src="assets/js/browser-check.js" type="text/javascript"></script>
+	<script src="assets/js/jquery.min.js" type="text/javascript"></script>
+	<script src="assets/js/fixed-header.js" type="text/javascript"></script>
+	<script src="assets/js/qrcode.min.js" type="text/javascript"></script>
+	<script type="text/javascript">    //<![CDATA[ 
+	    $(window).load(function () {
+	        /*  cellPos jQuery plugin
+	        ---------------------
+	        Get visual position of cell in HTML table (or its block like thead).
+	        Return value is object with "top" and "left" properties set to row and column index of top-left cell corner.
+	        Example of use:
+	            $("#myTable tbody td").each(function(){ 
+	                $(this).text( $(this).cellPos().top +", "+ $(this).cellPos().left );
+	            });
+	        */
+	        (function ($) {
+	            /* scan individual table and set "cellPos" data in the form { left: x-coord, top: y-coord } */
+	            function scanTable($table) {
+	                var m = [];
+	                $table.children("tr").each(function (y, row) {
+	                    $(row).children("td, th").each(function (x, cell) {
+	                        var $cell = $(cell),
+	                            cspan = $cell.attr("colspan") | 0,
+	                            rspan = $cell.attr("rowspan") | 0,
+	                            tx, ty;
+	                        cspan = cspan ? cspan : 1;
+	                        rspan = rspan ? rspan : 1;
+	                        for (; m[y] && m[y][x]; ++x);  //skip already occupied cells in current row
+	                        for (tx = x; tx < x + cspan; ++tx) {  //mark matrix elements occupied by current cell with true
+	                            for (ty = y; ty < y + rspan; ++ty) {
+	                                if (!m[ty]) {  //fill missing rows
+	                                    m[ty] = [];
+	                                }
+	                                m[ty][tx] = true;
+	                            }
+	                        }
+	                        var pos = { top: y, left: x };
+	                        $cell.data("cellPos", pos);
+	                    });
+	                });
+	            };
+
+	            /* plugin */
+	            $.fn.cellPos = function (rescan) {
+	                var $cell = this.first(),
+	                    pos = $cell.data("cellPos");
+	                if (!pos || rescan) {
+	                    var $table = $cell.closest("table, thead, tbody, tfoot");
+	                    scanTable($table);
+	                }
+	                pos = $cell.data("cellPos");
+	                return pos;
+	            }
+	        })(jQuery);
+
+	        //$(document).ready(function () {
+	        //    $("table tbody td").each(function () {
+	        //        $(this).text($(this).cellPos().top + "," + $(this).cellPos().left);
+	        //    });
+	        //});
+
+	        $('input').keypress(function (e) {
+	            if (e.which == 13) {
+	                e.preventDefault();
+	                var $this = $(this),
+	                    cellPosLeft = $this.closest('td').cellPos().left;
+
+	                var cells = $this.closest('tr').next().find('td')
+	                for (var i = 0; i < cells.length; i++) {
+	                    //console.log($(cells[i]).cellPos().left)
+	                    if ($(cells[i]).cellPos().left === cellPosLeft) {
+	                        $(cells[i]).find('input').focus();
+	                    }
+	                }
+	            }
+	        });
+
+	        var input = document.getElementsByTagName('input');
+	        //retrieve 
+	        for (var i = 0; i < input.length; i++) {
+	            if (input[i].type == 'number') {
+	                var lsVal = localStorage.getItem(input[i].name);
+	                if (Number(input[i].placeholder) !== Number(lsVal)) { input[i].value = lsVal; }
+	                else { localStorage.removeItem(input[i].name) }
+	            }
+	            else {
+	                if (input[i].type == 'checkbox' && input[i].checked === false) {
+	                    if (localStorage.getItem(input[i].name) === 'Yes') { input[i].checked = true }
+	                } else { localStorage.removeItem(input[i].name) };
+	            }
+	        }
+
+	        var focus1 = document.getElementById(localStorage.getItem('focus'));
+	        if (focus1 != null) {
+	            focus1.focus();
+	            fixedheaders();
+	        }
+
+	        var scroll1 = document.getElementById(localStorage.getItem('scroll'));
+	        if (scroll1 != null) {
+	            $(window).scrollTop(scroll1)
+	        }
+
+	        function storeInputs() {
+	            for (var i = 0; i < input.length; i++) {
+	                if (input[i].value !== '') {
+	                    if (input[i].type === 'number') {
+	                        localStorage.setItem(input[i].name, input[i].value);
+	                    } else {
+	                        var pHcheck = document.getElementsByName(input[i].name);
+	                        if (pHcheck.length === 1) {
+	                            if (input[i].checked === true) {
+	                                localStorage.setItem(input[i].name, input[i].value);
+	                            } else {
+	                                localStorage.removeItem(input[i].name);
+	                            }
+	                        } else {
+	                            if (input[i].type === 'hidden') {
+	                                if (pHcheck[1].type === 'checkbox' && pHcheck[1].checked === false) {
+	                                    localStorage.setItem(input[i].name, input[i].value);
+	                                } else {
+	                                    localStorage.removeItem(input[i].name);
+	                                }
+	                            }
+	                        }
+	                    }
+	                } else {
+	                    localStorage.removeItem(input[i].name);
+	                }
+	            }
+	        }
+
+	        jQuery('span.little-arrow').click(function () {
+	            var $this = $(this),
+	            index_col = $this.closest('td').index(),
+	            index_row = $this.closest('tr').index(),
+	            val = $(this).next('input').val();
+	            for (var i = 0; i < input.length; i++) {
+	                if (input[i].type == 'number' && $(input[i]).closest('td').index() == index_col &&
+	                    $(input[i]).closest('tr').index() > index_row && !input[i].value) {
+	                    input[i].value = val;
+	                }
+	            }
+	            storeInputs();
+	        });
+
+	        jQuery('span.gluc-arrow').click(function () {
+	            var td = document.getElementsByTagName('td'),
+	            $this = $(this),
+	            index_col = $this.closest('th').index();
+	            for (var i = 0; i < td.length; i++) {
+	                if ($(td[i]).index() == index_col && $(td[i]).text().indexOf('+') > -1) {
+	                    var index_row = $(td[i]).closest('tr').index(),
+	                    gluc_input = $(td[i]).closest('td'),
+	                    gluc_text = $(td[i]).text();
+	                    var gluc_value = gluc_text.substring(gluc_text.indexOf('+') + 1);
+	                    if (gluc_value > 0) {
+	                        do {
+	                            gluc_input = gluc_input.closest('td').next().find('input');
+	                        } while (gluc_input.closest('tr').index() == index_row && gluc_input.attr('id').indexOf('Nutrient') == -1);
+	                        if (!gluc_input.val()) { gluc_input.val(gluc_value); }
+	                    }
+	                }
+	            }
+	            storeInputs();
+	        });
+
+
+	        //store
+	        $('input').on('input propertychange paste change', function () {
+	            storeInputs();
+	        });
+
+	        $('*').focusout(function () {
+	            localStorage.removeItem('focus')
+	        });
+
+	        $('*').focus(function () {
+	            localStorage.setItem('focus', $(this).attr("id"))
+	        });
+
+	        $(window).scroll(function () {
+	            localStorage.setItem('scroll', $(window).scrollTop());
+	        });
+
+	        /* Call fixedheaders when the Barcode cell is focused or not focused, needed for Firefox */
+	        $(".BarcodeCell").focus(function () {
+	            fixedheaders();
+	        }).blur(function () {
+	            fixedheaders();
+	        });
+
+	        // disable mousewheel on a input number field when in focus
+	        // (to prevent Cromium browsers change the value when scrolling)
+	        $('form').on('focus', 'input[type=number]', function (e) {
+	            $(this).on('mousewheel.disableScroll', function (e) {
+	                e.preventDefault()
+	            })
+	        })
+	        $('form').on('blur', 'input[type=number]', function (e) {
+	            $(this).off('mousewheel.disableScroll')
+	        })
+
+	    });
+
+	    //]]>
+
+	    function clearforms(check) {
+	        if (check == true) { var r = confirm("Are you sure you want to clear all fields?\n\nThis cannot be undone."); }
+	        else { var r = true; }
+	        if (r == true) {
+	            var input = document.getElementsByTagName('input');
+	            for (var i = 0; i < input.length; i++) {
+	                if (input[i].type == 'number') { input[i].value = null; };
+	                if (input[i].type == 'checkbox') {
+	                    if (input[i].hasAttribute("checked"))
+	                    { input[i].checked = true; }
+	                    else
+	                    { input[i].checked = false; }
+	                };
+	            }
+
+	            localStorage.clear();
+
+	            window.location.href = document.URL;
+	        }
+	    }
+
+	    $(document).ready(function () {
+	        var qrs = document.getElementsByClassName('HiddenBarcodeCell');
+	        for (i = 0; i < qrs.length; i++) {
+	            var color = '#000000';
+	            if (qrs[i].hasAttribute('data-color')) { color = qrs[i].attributes['data-color'].value;};
+	            new QRCode(qrs[i], {
+	                text: qrs[i].attributes['title'].value,
+	                width: 150,
+	                height: 150,
+	                colorDark: color,
+	                colorLight: '#ffffff',
+	                correctLevel: QRCode.CorrectLevel.L
+	            });
+	        };
+	        
+	        fixedheaders();
+	    });
+
+	    window.setTimeout(function () { window.location.reload() }, 900000);
+
+	</script>
+	<link href="assets/css/main.css" type="text/css" rel="stylesheet" />
+	<link href="assets/css/SamplingSheet.css" type="text/css" rel="stylesheet" />
+</head>
+<body>
+    <a href="https://github.com/tjschiffer/Sampling-Sheet" target="_blank" style="z-index:1;position:fixed;font-size:0.85vw;right:0.1vw;top:-0.1vw">Help</a>
+    <form action="localstorage.html" id="Form1">
+        <table id="Table1" class="myTable">
+			<tr id="headerrow" class="border_bottom" style="font-weight:bold;">
+				<th>Run</th><th>Batch ID</th><th>Current<br/>Day</th><th>Lot</th><th>Check?</th><th>Time</th><th>Day</th><th>Val</th><th>Nutrient</th><th>Input1</th><th>Input2</th><th>Count</th><th>Input3</th><th>Sample Barcode</th>
+			</tr>
+			<tr style="background-color:#90F8CA;">
+				<td class="border_bottom" rowspan="5">Run1</td>
+				<td class="border_bottom" rowspan="5">RunID1</td>
+				<td class="border_bottom" rowspan="5">5</td>
+				<td>Lot1</td>
+				<td>
+					<input id="Run1_Lot1+Check (y/n)-hidden" type="hidden" name="Run1_Lot1+Check (y/n)" value="0" tabindex="-1"></input>
+					<input name="Run1_Lot1+Check" type="checkbox" id="Run1_Lot1+Check" checked="checked" class="phcheckbox" value="1" tabindex="-1" />
+					<label id="Run1_Lot1+Check-label" for="Run1_Lot1+Check" class="phcheckbox" style="color:#787878;"></label>
+				</td>
+				<td>10/1/2015&nbsp;6:05:33&nbsp;PM</td>
+				<td>0</td>
+				<td>7.00</td>
+				<td>1.00</td>
+				<td>
+					<input name="Run1_Lot1+Input1" type="number" id="Run1_Lot1+Input1" min="0" step="0.5" />
+				</td>
+				<td>
+					<input name="Run1_Lot1+Input2" type="number" id="Run1_Lot1+Input2" min="0" step="0.5" />
+				</td>
+				<td>1.00@100%</td>
+				<td>
+					<input name="Run1_Lot1+Input3" type="number" id="Run1_Lot1+Input3" min="0" step="0.01" placeholder="0.24" />
+				</td>
+				<td id="Run1_Lot1+barcode" class="BarcodeCell" tabindex="-1" >
+					<div class="Barcode">BarcodeLine1<br/>Day0</div>
+						<table class="BarcodeTable">
+							<tr>
+								<td>BarcodeLine1<br/>BarcodeLine2<br/>BarcodeLine3</td><td class="HiddenBarcodeCell" title="BarcodeLine1	BarcodeLine2	BarcodeLine3" data-color="#000000"></td>
+							</tr>
+						</table>
+				</td>
+			</tr>
+			<tr style="background-color:#A4FFDE;">
+				<td>Lot2</td>
+				<td>
+					<input id="Run1_Lot2+Check (y/n)-hidden" type="hidden" name="Run1_Lot2+Check (y/n)" value="0" tabindex="-1"></input>
+					<input name="Run1_Lot2+Check" type="checkbox" id="Run1_Lot2+Check" checked="checked" class="phcheckbox" value="1" tabindex="-1" />
+					<label id="Run1_Lot2+Check-label" for="Run1_Lot2+Check" class="phcheckbox" style="color:#787878;"></label>
+				</td>
+				<td>10/2/2015&nbsp;6:05:33&nbsp;PM</td>
+				<td>1</td>
+				<td>8.00</td>
+				<td>6.50</td>
+				<td>
+					<input name="Run1_Lot2+Input1" type="number" id="Run1_Lot2+Input1" min="0" step="0.5" placeholder="5" />
+				</td>
+				<td>
+					<input name="Run1_Lot2+Input2" type="number" id="Run1_Lot2+Input2" min="0" step="0.5" />
+				</td>
+				<td>5.50@45%</td>
+				<td>
+					<input name="Run1_Lot2+Input3" type="number" id="Run1_Lot2+Input3" min="0" step="0.01" placeholder="0.5" />
+				</td>
+				<td id="Run1_Lot2+barcode" class="BarcodeCell" tabindex="-1" >
+					<div class="Barcode">BarcodeLine1<br/>Day1</div>
+						<table class="BarcodeTable">
+							<tr>
+								<td>BarcodeLine1<br/>BarcodeLine2<br/>BarcodeLine3</td><td class="HiddenBarcodeCell" title="BarcodeLine1	BarcodeLine2	BarcodeLine3" data-color="#000000"></td>
+							</tr>
+						</table>
+					</td>
+				</td>
+			</tr>
+			<tr style="background-color:#90F8CA;">
+				<td>Lot3</td>
+				<td>
+					<input name="Run1_Lot3+Check" type="checkbox" id="Run1_Lot3+Check" class="phcheckbox" value="1" tabindex="-1" />
+					<label id="Run1_Lot3+Check-label" for="Run1_Lot3+Check" class="phcheckbox" style="color:#787878;"></label>
+				</td>
+				<td>10/3/2015&nbsp;6:05:33&nbsp;PM</td>
+				<td>2</td>
+				<td>6.00</td>
+				<td>6.50</td>
+				<td>
+					<input name="Run1_Lot3+Input1" type="number" id="Run1_Lot3+Input1" min="0" step="0.5" placeholder="6" />
+				</td>
+				<td>
+					<input name="Run1_Lot3+Input2" type="number" id="Run1_Lot3+Input2" min="0" step="0.5" />
+				</td>
+				<td>8.6@37%</td>
+				<td>
+					<input name="Run1_Lot3+Input3" type="number" id="Run1_Lot3+Input3" min="0" step="0.01" placeholder="0.7" />
+				</td>
+				<td id="Run1_Lot3+barcode" class="BarcodeCell" tabindex="-1" >
+					<div class="Barcode">BarcodeLine1<br/>Day2</div>
+						<table class="BarcodeTable">
+							<tr>
+								<td>BarcodeLine1<br/>BarcodeLine2<br/>BarcodeLine3</td><td class="HiddenBarcodeCell" title="BarcodeLine1	BarcodeLine2	BarcodeLine3" data-color="#000000"></td>
+							</tr>
+						</table>
+					</td>
+				</td>
+			</tr>
+			<tr style="background-color:#A4FFDE;">
+				<td>Lot4</td>
+				<td>
+					<input id="Run1_Lot4+Check (y/n)-hidden" type="hidden" name="Run1_Lot4+Check (y/n)" value="0" tabindex="-1"></input>
+					<input name="Run1_Lot4+Check" type="checkbox" id="Run1_Lot4+Check" checked="checked" class="phcheckbox" value="1" tabindex="-1" />
+					<label id="Run1_Lot4+Check-label" for="Run1_Lot4+Check" class="phcheckbox" style="color:#787878;"></label>
+				</td>
+				<td>10/4/2015&nbsp;5:05:33&nbsp;PM</td>
+				<td>4</td>
+				<td>3.50</td>
+				<td>7.5</td>
+				<td>
+					<input name="Run1_Lot4+Input1" type="number" id="Run1_Lot4+Input1" min="0" step="0.5" placeholder="5" />
+				</td>
+				<td>
+					<input name="Run1_Lot4+Input2" type="number" id="Run1_Lot4+Input2" min="0" step="0.5" />
+				</td>
+				<td>5.6@15%</td>
+				<td>
+					<input name="Run1_Lot4+Input3" type="number" id="Run1_Lot4+Input3" min="0" step="0.01" placeholder="0.5" />
+				</td>
+				<td id="Run1_Lot4+barcode" class="BarcodeCell" tabindex="-1" >
+					<div class="Barcode">BarcodeLine1<br/>Day3</div>
+						<table class="BarcodeTable">
+							<tr>
+								<td>BarcodeLine1<br/>BarcodeLine2<br/>BarcodeLine3</td><td class="HiddenBarcodeCell" title="BarcodeLine1	BarcodeLine2	BarcodeLine3" data-color="#000000"></td>
+							</tr>
+						</table>
+					</td>
+				</td>
+			</tr>
+			<tr class="border_bottom" style="background-color:#90F8CA;">
+				<td>Lot5</td>
+				<td>
+					<input name="Run1_Lot5+Check" type="checkbox" id="Run1_Lot5+Check" class="phcheckbox" value="1" tabindex="-1" />
+					<label id="Run1_Lot5+Check-label" for="Run1_Lot5+Check" class="phcheckbox" style="color:#787878;"></label>
+				</td>
+				<td>10/5/2015&nbsp;7:18:33&nbsp;PM</td>
+				<td>5</td>
+				<td>4.00</td>
+				<td>1.50</td>
+				<td>
+					<input name="Run1_Lot5+Input1" type="number" id="Run1_Lot5+Input1" min="0" step="0.5" placeholder="6" />
+				</td>
+				<td>
+					<input name="Run1_Lot5+Input2" type="number" id="Run1_Lot5+Input2" min="0" step="0.5" />
+				</td>
+				<td>1.5@83%</td>
+				<td>
+					<input name="Run1_Lot5+Input3" type="number" id="Run1_Lot5+Input3" min="0" step="0.01" placeholder="0.7" />
+				</td>
+				<td id="Run1_Lot5+barcode" class="BarcodeCell" tabindex="-1" >
+					<div class="Barcode">BarcodeLine1<br/>Day4</div>
+						<table class="BarcodeTable">
+							<tr>
+								<td>BarcodeLine1<br/>BarcodeLine2<br/>BarcodeLine3</td><td class="HiddenBarcodeCell" title="BarcodeLine1	BarcodeLine2	BarcodeLine3" data-color="#000000"></td>
+							</tr>
+						</table>
+					</td>
+				</td>
+			</tr>
+			<tr style="background-color:#90F8CA;">
+				<td class="border_bottom" rowspan="5">Run2</td>
+				<td class="border_bottom" rowspan="5">RunID2</td>
+				<td class="border_bottom" rowspan="5">5</td>
+				<td>Lot1</td>
+				<td>
+					<input id="Run2_Lot1+Check (y/n)-hidden" type="hidden" name="Run2_Lot1+Check (y/n)" value="0" tabindex="-1"></input>
+					<input name="Run2_Lot1+Check" type="checkbox" id="Run2_Lot1+Check" checked="checked" class="phcheckbox" value="1" tabindex="-1" />
+					<label id="Run2_Lot1+Check-label" for="Run2_Lot1+Check" class="phcheckbox" style="color:#787878;"></label>
+				</td>
+				<td>10/1/2015&nbsp;6:05:33&nbsp;PM</td>
+				<td>0</td>
+				<td>7.00</td>
+				<td>1.00</td>
+				<td>
+					<input name="Run2_Lot1+Input1" type="number" id="Run2_Lot1+Input1" min="0" step="0.5" />
+				</td>
+				<td>
+					<input name="Run2_Lot1+Input2" type="number" id="Run2_Lot1+Input2" min="0" step="0.5" />
+				</td>
+				<td>1.00@100%</td>
+				<td>
+					<input name="Run2_Lot1+Input3" type="number" id="Run2_Lot1+Input3" min="0" step="0.01" placeholder="0.24" />
+				</td>
+				<td id="Run2_Lot1+barcode" class="BarcodeCell" tabindex="-1" >
+					<div class="Barcode">BarcodeLine1<br/>Day0</div>
+						<table class="BarcodeTable">
+							<tr>
+								<td>BarcodeLine1<br/>BarcodeLine2<br/>BarcodeLine3</td><td class="HiddenBarcodeCell" title="BarcodeLine1	BarcodeLine2	BarcodeLine3" data-color="#000000"></td>
+							</tr>
+						</table>
+				</td>
+			</tr>
+			<tr style="background-color:#A4FFDE;">
+				<td>Lot2</td>
+				<td>
+					<input id="Run2_Lot2+Check (y/n)-hidden" type="hidden" name="Run2_Lot2+Check (y/n)" value="0" tabindex="-1"></input>
+					<input name="Run2_Lot2+Check" type="checkbox" id="Run2_Lot2+Check" checked="checked" class="phcheckbox" value="1" tabindex="-1" />
+					<label id="Run2_Lot2+Check-label" for="Run2_Lot2+Check" class="phcheckbox" style="color:#787878;"></label>
+				</td>
+				<td>10/2/2015&nbsp;6:05:33&nbsp;PM</td>
+				<td>1</td>
+				<td>8.00</td>
+				<td>6.50</td>
+				<td>
+					<input name="Run2_Lot2+Input1" type="number" id="Run2_Lot2+Input1" min="0" step="0.5" placeholder="5" />
+				</td>
+				<td>
+					<input name="Run2_Lot2+Input2" type="number" id="Run2_Lot2+Input2" min="0" step="0.5" />
+				</td>
+				<td>5.50@45%</td>
+				<td>
+					<input name="Run2_Lot2+Input3" type="number" id="Run2_Lot2+Input3" min="0" step="0.01" placeholder="0.5" />
+				</td>
+				<td id="Run2_Lot2+barcode" class="BarcodeCell" tabindex="-1" >
+					<div class="Barcode">BarcodeLine1<br/>Day1</div>
+						<table class="BarcodeTable">
+							<tr>
+								<td>BarcodeLine1<br/>BarcodeLine2<br/>BarcodeLine3</td><td class="HiddenBarcodeCell" title="BarcodeLine1	BarcodeLine2	BarcodeLine3" data-color="#000000"></td>
+							</tr>
+						</table>
+					</td>
+				</td>
+			</tr>
+			<tr style="background-color:#90F8CA;">
+				<td>Lot3</td>
+				<td>
+					<input name="Run2_Lot3+Check" type="checkbox" id="Run2_Lot3+Check" class="phcheckbox" value="1" tabindex="-1" />
+					<label id="Run2_Lot3+Check-label" for="Run2_Lot3+Check" class="phcheckbox" style="color:#787878;"></label>
+				</td>
+				<td>10/3/2015&nbsp;6:05:33&nbsp;PM</td>
+				<td>2</td>
+				<td>6.00</td>
+				<td>6.50</td>
+				<td>
+					<input name="Run2_Lot3+Input1" type="number" id="Run2_Lot3+Input1" min="0" step="0.5" placeholder="6" />
+				</td>
+				<td>
+					<input name="Run2_Lot3+Input2" type="number" id="Run2_Lot3+Input2" min="0" step="0.5" />
+				</td>
+				<td>8.6@37%</td>
+				<td>
+					<input name="Run2_Lot3+Input3" type="number" id="Run2_Lot3+Input3" min="0" step="0.01" placeholder="0.7" />
+				</td>
+				<td id="Run2_Lot3+barcode" class="BarcodeCell" tabindex="-1" >
+					<div class="Barcode">BarcodeLine1<br/>Day2</div>
+						<table class="BarcodeTable">
+							<tr>
+								<td>BarcodeLine1<br/>BarcodeLine2<br/>BarcodeLine3</td><td class="HiddenBarcodeCell" title="BarcodeLine1	BarcodeLine2	BarcodeLine3" data-color="#000000"></td>
+							</tr>
+						</table>
+					</td>
+				</td>
+			</tr>
+			<tr style="background-color:#A4FFDE;">
+				<td>Lot4</td>
+				<td>
+					<input id="Run2_Lot4+Check (y/n)-hidden" type="hidden" name="Run2_Lot4+Check (y/n)" value="0" tabindex="-1"></input>
+					<input name="Run2_Lot4+Check" type="checkbox" id="Run2_Lot4+Check" checked="checked" class="phcheckbox" value="1" tabindex="-1" />
+					<label id="Run2_Lot4+Check-label" for="Run2_Lot4+Check" class="phcheckbox" style="color:#787878;"></label>
+				</td>
+				<td>10/4/2015&nbsp;5:05:33&nbsp;PM</td>
+				<td>4</td>
+				<td>3.50</td>
+				<td>7.5</td>
+				<td>
+					<input name="Run2_Lot4+Input1" type="number" id="Run2_Lot4+Input1" min="0" step="0.5" placeholder="5" />
+				</td>
+				<td>
+					<input name="Run2_Lot4+Input2" type="number" id="Run2_Lot4+Input2" min="0" step="0.5" />
+				</td>
+				<td>5.6@15%</td>
+				<td>
+					<input name="Run2_Lot4+Input3" type="number" id="Run2_Lot4+Input3" min="0" step="0.01" placeholder="0.5" />
+				</td>
+				<td id="Run2_Lot4+barcode" class="BarcodeCell" tabindex="-1" >
+					<div class="Barcode">BarcodeLine1<br/>Day3</div>
+						<table class="BarcodeTable">
+							<tr>
+								<td>BarcodeLine1<br/>BarcodeLine2<br/>BarcodeLine3</td><td class="HiddenBarcodeCell" title="BarcodeLine1	BarcodeLine2	BarcodeLine3" data-color="#000000"></td>
+							</tr>
+						</table>
+					</td>
+				</td>
+			</tr>
+			<tr class="border_bottom" style="background-color:#90F8CA;">
+				<td>Lot5</td>
+				<td>
+					<input name="Run2_Lot5+Check" type="checkbox" id="Run2_Lot5+Check" class="phcheckbox" value="1" tabindex="-1" />
+					<label id="Run2_Lot5+Check-label" for="Run2_Lot5+Check" class="phcheckbox" style="color:#787878;"></label>
+				</td>
+				<td>10/5/2015&nbsp;7:18:33&nbsp;PM</td>
+				<td>5</td>
+				<td>4.00</td>
+				<td>1.50</td>
+				<td>
+					<input name="Run2_Lot5+Input1" type="number" id="Run2_Lot5+Input1" min="0" step="0.5" placeholder="6" />
+				</td>
+				<td>
+					<input name="Run2_Lot5+Input2" type="number" id="Run2_Lot5+Input2" min="0" step="0.5" />
+				</td>
+				<td>1.5@83%</td>
+				<td>
+					<input name="Run2_Lot5+Input3" type="number" id="Run2_Lot5+Input3" min="0" step="0.01" placeholder="0.7" />
+				</td>
+				<td id="Run2_Lot5+barcode" class="BarcodeCell" tabindex="-1" >
+					<div class="Barcode">BarcodeLine1<br/>Day4</div>
+						<table class="BarcodeTable">
+							<tr>
+								<td>BarcodeLine1<br/>BarcodeLine2<br/>BarcodeLine3</td><td class="HiddenBarcodeCell" title="BarcodeLine1	BarcodeLine2	BarcodeLine3" data-color="#000000"></td>
+							</tr>
+						</table>
+					</td>
+				</td>
+			</tr>
+			<tr style="background-color:#90F8CA;">
+				<td class="border_bottom" rowspan="5">Run3</td>
+				<td class="border_bottom" rowspan="5">RunID3</td>
+				<td class="border_bottom" rowspan="5">5</td>
+				<td>Lot1</td>
+				<td>
+					<input id="Run3_Lot1+Check (y/n)-hidden" type="hidden" name="Run3_Lot1+Check (y/n)" value="0" tabindex="-1"></input>
+					<input name="Run3_Lot1+Check" type="checkbox" id="Run3_Lot1+Check" checked="checked" class="phcheckbox" value="1" tabindex="-1" />
+					<label id="Run3_Lot1+Check-label" for="Run3_Lot1+Check" class="phcheckbox" style="color:#787878;"></label>
+				</td>
+				<td>10/1/2015&nbsp;6:05:33&nbsp;PM</td>
+				<td>0</td>
+				<td>7.00</td>
+				<td>1.00</td>
+				<td>
+					<input name="Run3_Lot1+Input1" type="number" id="Run3_Lot1+Input1" min="0" step="0.5" />
+				</td>
+				<td>
+					<input name="Run3_Lot1+Input2" type="number" id="Run3_Lot1+Input2" min="0" step="0.5" />
+				</td>
+				<td>1.00@100%</td>
+				<td>
+					<input name="Run3_Lot1+Input3" type="number" id="Run3_Lot1+Input3" min="0" step="0.01" placeholder="0.24" />
+				</td>
+				<td id="Run3_Lot1+barcode" class="BarcodeCell" tabindex="-1" >
+					<div class="Barcode">BarcodeLine1<br/>Day0</div>
+						<table class="BarcodeTable">
+							<tr>
+								<td>BarcodeLine1<br/>BarcodeLine2<br/>BarcodeLine3</td><td class="HiddenBarcodeCell" title="BarcodeLine1	BarcodeLine2	BarcodeLine3" data-color="#000000"></td>
+							</tr>
+						</table>
+				</td>
+			</tr>
+			<tr style="background-color:#A4FFDE;">
+				<td>Lot2</td>
+				<td>
+					<input id="Run3_Lot2+Check (y/n)-hidden" type="hidden" name="Run3_Lot2+Check (y/n)" value="0" tabindex="-1"></input>
+					<input name="Run3_Lot2+Check" type="checkbox" id="Run3_Lot2+Check" checked="checked" class="phcheckbox" value="1" tabindex="-1" />
+					<label id="Run3_Lot2+Check-label" for="Run3_Lot2+Check" class="phcheckbox" style="color:#787878;"></label>
+				</td>
+				<td>10/2/2015&nbsp;6:05:33&nbsp;PM</td>
+				<td>1</td>
+				<td>8.00</td>
+				<td>6.50</td>
+				<td>
+					<input name="Run3_Lot2+Input1" type="number" id="Run3_Lot2+Input1" min="0" step="0.5" placeholder="5" />
+				</td>
+				<td>
+					<input name="Run3_Lot2+Input2" type="number" id="Run3_Lot2+Input2" min="0" step="0.5" />
+				</td>
+				<td>5.50@45%</td>
+				<td>
+					<input name="Run3_Lot2+Input3" type="number" id="Run3_Lot2+Input3" min="0" step="0.01" placeholder="0.5" />
+				</td>
+				<td id="Run3_Lot2+barcode" class="BarcodeCell" tabindex="-1" >
+					<div class="Barcode">BarcodeLine1<br/>Day1</div>
+						<table class="BarcodeTable">
+							<tr>
+								<td>BarcodeLine1<br/>BarcodeLine2<br/>BarcodeLine3</td><td class="HiddenBarcodeCell" title="BarcodeLine1	BarcodeLine2	BarcodeLine3" data-color="#000000"></td>
+							</tr>
+						</table>
+					</td>
+				</td>
+			</tr>
+			<tr style="background-color:#90F8CA;">
+				<td>Lot3</td>
+				<td>
+					<input name="Run3_Lot3+Check" type="checkbox" id="Run3_Lot3+Check" class="phcheckbox" value="1" tabindex="-1" />
+					<label id="Run3_Lot3+Check-label" for="Run3_Lot3+Check" class="phcheckbox" style="color:#787878;"></label>
+				</td>
+				<td>10/3/2015&nbsp;6:05:33&nbsp;PM</td>
+				<td>2</td>
+				<td>6.00</td>
+				<td>6.50</td>
+				<td>
+					<input name="Run3_Lot3+Input1" type="number" id="Run3_Lot3+Input1" min="0" step="0.5" placeholder="6" />
+				</td>
+				<td>
+					<input name="Run3_Lot3+Input2" type="number" id="Run3_Lot3+Input2" min="0" step="0.5" />
+				</td>
+				<td>8.6@37%</td>
+				<td>
+					<input name="Run3_Lot3+Input3" type="number" id="Run3_Lot3+Input3" min="0" step="0.01" placeholder="0.7" />
+				</td>
+				<td id="Run3_Lot3+barcode" class="BarcodeCell" tabindex="-1" >
+					<div class="Barcode">BarcodeLine1<br/>Day2</div>
+						<table class="BarcodeTable">
+							<tr>
+								<td>BarcodeLine1<br/>BarcodeLine2<br/>BarcodeLine3</td><td class="HiddenBarcodeCell" title="BarcodeLine1	BarcodeLine2	BarcodeLine3" data-color="#000000"></td>
+							</tr>
+						</table>
+					</td>
+				</td>
+			</tr>
+			<tr style="background-color:#A4FFDE;">
+				<td>Lot4</td>
+				<td>
+					<input id="Run3_Lot4+Check (y/n)-hidden" type="hidden" name="Run3_Lot4+Check (y/n)" value="0" tabindex="-1"></input>
+					<input name="Run3_Lot4+Check" type="checkbox" id="Run3_Lot4+Check" checked="checked" class="phcheckbox" value="1" tabindex="-1" />
+					<label id="Run3_Lot4+Check-label" for="Run3_Lot4+Check" class="phcheckbox" style="color:#787878;"></label>
+				</td>
+				<td>10/4/2015&nbsp;5:05:33&nbsp;PM</td>
+				<td>4</td>
+				<td>3.50</td>
+				<td>7.5</td>
+				<td>
+					<input name="Run3_Lot4+Input1" type="number" id="Run3_Lot4+Input1" min="0" step="0.5" placeholder="5" />
+				</td>
+				<td>
+					<input name="Run3_Lot4+Input2" type="number" id="Run3_Lot4+Input2" min="0" step="0.5" />
+				</td>
+				<td>5.6@15%</td>
+				<td>
+					<input name="Run3_Lot4+Input3" type="number" id="Run3_Lot4+Input3" min="0" step="0.01" placeholder="0.5" />
+				</td>
+				<td id="Run3_Lot4+barcode" class="BarcodeCell" tabindex="-1" >
+					<div class="Barcode">BarcodeLine1<br/>Day3</div>
+						<table class="BarcodeTable">
+							<tr>
+								<td>BarcodeLine1<br/>BarcodeLine2<br/>BarcodeLine3</td><td class="HiddenBarcodeCell" title="BarcodeLine1	BarcodeLine2	BarcodeLine3" data-color="#000000"></td>
+							</tr>
+						</table>
+					</td>
+				</td>
+			</tr>
+			<tr class="border_bottom" style="background-color:#90F8CA;">
+				<td>Lot5</td>
+				<td>
+					<input name="Run3_Lot5+Check" type="checkbox" id="Run3_Lot5+Check" class="phcheckbox" value="1" tabindex="-1" />
+					<label id="Run3_Lot5+Check-label" for="Run3_Lot5+Check" class="phcheckbox" style="color:#787878;"></label>
+				</td>
+				<td>10/5/2015&nbsp;7:18:33&nbsp;PM</td>
+				<td>5</td>
+				<td>4.00</td>
+				<td>1.50</td>
+				<td>
+					<input name="Run3_Lot5+Input1" type="number" id="Run3_Lot5+Input1" min="0" step="0.5" placeholder="6" />
+				</td>
+				<td>
+					<input name="Run3_Lot5+Input2" type="number" id="Run3_Lot5+Input2" min="0" step="0.5" />
+				</td>
+				<td>1.5@83%</td>
+				<td>
+					<input name="Run3_Lot5+Input3" type="number" id="Run3_Lot5+Input3" min="0" step="0.01" placeholder="0.7" />
+				</td>
+				<td id="Run3_Lot5+barcode" class="BarcodeCell" tabindex="-1" >
+					<div class="Barcode">BarcodeLine1<br/>Day4</div>
+						<table class="BarcodeTable">
+							<tr>
+								<td>BarcodeLine1<br/>BarcodeLine2<br/>BarcodeLine3</td><td class="HiddenBarcodeCell" title="BarcodeLine1	BarcodeLine2	BarcodeLine3" data-color="#000000"></td>
+							</tr>
+						</table>
+					</td>
+				</td>
+			</tr>
+		</table>
+        <div>   
+            <input type="submit" value="Send Data" style="float: right; margin: 2.5vh; font-weight: bold; font-family: Calibri; font-size: 1.1vw; width: 10vw; height: 2.5vw; outline: none;" />
+        </div>
+        </form>
+<button onclick="clearforms(true)" style="float: left; margin: 2.5vh; font-weight: bold; font-family: Calibri; font-size: 1.1vw; width: 10vw; height: 2.5vw;">Clear Forms</button>      
+</body>
+</html>
