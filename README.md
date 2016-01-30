@@ -17,7 +17,7 @@ The table is generated using an ASP .NET page that executes a query against a LI
 	A Fixed Header jQuery script is used which copies all header cells and replaces them with fixed position clones of the same dimension. This application targets Chrome 37+ and as such this fixed header implementation fails for other browsers due to variable results from javascript's clientWidth and/or paddingLeft/Right properties.
 
 **Client Side QR Barcodes on Focus:**
-	When the user focuses on a cell in the "Sample Barcode" column, a QR barcode is display which can be scanned into a spreadsheet. Uses qrcode.js available [here](https://davidshimjs.github.io/qrcodejs/)
+	When the user focuses on a cell in the "Sample Barcode" column, a QR barcode is display which can be scanned into a spreadsheet. Uses qrcode.js available [here](https://davidshimjs.github.io/qrcodejs/).
 
 **Browser Check:**
 	Due to several users having very old versions of Chrome, a browser check script is used to catch users who would otherwise be unable to use CSS3 checkboxes and ure them to contact the IT department to update to a complaint Chrome version.
