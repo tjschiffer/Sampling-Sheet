@@ -7,6 +7,8 @@ The table is generated using an ASP .NET page that executes a query against a LI
 "Send Data" sends values by POST to a server-side csv generator which is presented the a LIMS. For demo purposes I have replaced that with a simple page showing the values sotred in LocalStorage. 
 
 **Notable Features:**
+
+
 **Spreadsheet like input of data.**
 	Users may press the "Enter" key to move to the next cell when entering data.
 
