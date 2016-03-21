@@ -4,7 +4,7 @@ This application is used to visualize sample results and user inputs from an in 
 
 The table is generated using an ASP .NET page that executes a query against a LIMS database and adds user inputs where neccessary.
 
-"Send Data" sends values by POST to a server-side csv generator which is presented the a LIMS. For demo purposes I have replaced that with a simple page showing the values sotred in LocalStorage. 
+"Send Data" sends values by POST to a server-side csv generator which is presented the a LIMS. For demo purposes I have replaced that with a simple page showing the values stored in LocalStorage. 
 
 **Notable Features:**
 
