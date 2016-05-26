@@ -12,6 +12,6 @@ if (/Chrome[\/\s](\d+\.\d+)/.test(navigator.userAgent)) { //test for Chrome/x.x 
 }
 if (!goodbrowser) { 
     r = confirm("You are using an unsupported browser. Many features of this application will not work. Please press OK to visit ServiceNow and request 'Google Chrome' or 'Firefox'. You may need to update this browser.");
-        if (r == true) { window.location.replace("https://regeneron.service-now.com/navpage.do"); }
+        if (r == true) { window.location.replace("https://www.service-now.com/navpage.do"); }
         else { alert("Don't say I didn't warn you..."); }
 };
