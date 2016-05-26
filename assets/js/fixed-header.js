@@ -13,10 +13,6 @@ function fixedheaders() {
         var fixedheader = $('#fixedheader');
         var header = $('#headerrow');
 
-        //if (fixedheader.length == 0) {
-        //    var fixedheader = header.clone().attr('id', 'fixedheader').insertBefore(header);
-        //};
-
         if (fixedheader.length == 0) {
             var fixedheader = header.clone().attr('id', 'fixedheader');
             $('body').prepend(fixedheader);
@@ -41,7 +37,7 @@ function fixedheaders() {
             width = headercells[i].clientWidth - padding;
 
             $(fixedheadercells[i]).css({
-                "position": "relative",
+                "position": "static",
                 "width": width,
                 "height": style.height,
                 "background": "rgba(255,255,255,0.9)"
